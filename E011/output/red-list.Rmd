@@ -1,0 +1,46 @@
+---
+title: "Redlisted species"
+author: '2050707'
+date: '2022-03-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+redlist <- readRDS("C:/Users/Julian/OneDrive/Desktop/MOD007691-E011/redlist1.rds")
+
+redlist <- redlist %>%
+  mutate(vals1 = factor(vals))
+
+argr <- redlist %>%
+  mutate(bocc = ifelse(redlist == 2015 & vals %in% c("G", "A"), 1,
+                        ifelse(redlist == 2021 & vals == "R", 2, 0))) %>%
+  filter(bocc != 0) %>%
+  group_by(species) %>%
+  add_count() %>%
+  filter(n == 2)
+
+argrsp <- pluck(argr, "species")
+
+```
+
+
+
+
+```{r fig.height=4, fig.width=4}
+
+redlist %>%
+  filter(species %in% argrsp) %>%
+  ggplot(aes(factor(redlist), fct_rev(species), fill = vals)) +
+  geom_tile(colour = "white") +
+  scale_fill_manual(values = c("goldenrod", "darkgreen", "red")) +
+  theme_minimal() +
+    theme(axis.text.y = element_text(size = rel(.6))) +
+  labs(x = "", 
+      y = "") 
+
+
+```
+
