@@ -9,8 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 
-redlist <- readRDS("C:/Users/Julian/OneDrive/Desktop/MOD007691-E011/redlist1.rds")
-
+redlist <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/redlist1.rds")
 redlist <- redlist %>%
   mutate(vals1 = factor(vals))
 
@@ -26,9 +25,6 @@ argrsp <- pluck(argr, "species")
 
 ```
 
-
-
-
 ```{r fig.height=4, fig.width=4}
 
 redlist %>%
@@ -43,4 +39,3 @@ redlist %>%
 
 
 ```
-
