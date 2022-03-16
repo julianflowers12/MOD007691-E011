@@ -1,0 +1,33 @@
+---
+title: "animal_silhouettes"
+author: "Julian Flowers"
+date: "23/01/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rphylopic)
+library(magick)
+```
+
+## Using `rphylopic`
+
+```{r}
+gf <- name_search("House sparrow", options = "namebankID")[1,]
+
+id <- name_images(uuid = gf$uid[1])
+
+uid <- id$same[[1]]$uid
+
+
+cat <- rphylopic::image_data(input = uid, size = "thumb")
+
+
+img <- magick::image_read("http://phylopic.org/assets/images/submissions/c64e59f8-5d99-4cf5-bcfd-c73022e288e2.64.png")
+
+magick::image_fill(img, color = "red")
+```
+
