@@ -116,7 +116,7 @@ bto_data_2 %>%
   group_by(Species = sp2) %>%
   arrange(rank_2021, year) %>%
   mutate(Species = str_replace_all(Species, "_", " ")) %>%
-  summarise(#`Trend \n1995 - 2019` = list(reverse), .groups = "drop",
+  summarise(`Trend \n1995 - 2019` = list(reverse), .groups = "drop",
             `% change in population \n1995 to 2021` = mean(change),
             `1996` = unique(`1996`),
             `2002` = unique(`2002`),
@@ -216,12 +216,9 @@ bto_data_2 %>%
   tab_spanner(
     label = "Assessment year",
     columns = vars(`1996`, `2002`, `2009`, `2015`, `2021`)
-  )
-
-
-
-
-  gt_sparkline(`Trend \n1995 - 2019`, type = "sparkline", same_limit = FALSE, label = TRUE)
+  ) %>%
+  gt_sparkline(`Trend \n1995 - 2019`, type = "sparkline", same_limit = FALSE, label = TRUE) %>%
+  gt::tab_source_note("Sources: https://app.bto.org/birdtrends/species.jsp?year=2020, \nStanbury, A., Eaton, M., Aebischer, N., Balmer, D., Brown, A., Douse, A., Lindley, P., McCulloch, N., Noble, D. and Ilka, W., 2021. Data from: The fifth review of Birds of Conservation Concern in the United Kingdom, Channel Islands and Isle of Man and second IUCN Red List assessment of extinction risk of birds for Great Britain. Available at: <http://datadryad.org/stash/dataset/doi:10.5061/dryad.cc2fqz672> [Accessed 6 Jan. 2022]. S")
 
 bf <- get_image(search = "Dunnock", 64)
 bf
