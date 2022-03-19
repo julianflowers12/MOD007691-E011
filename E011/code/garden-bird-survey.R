@@ -1,6 +1,29 @@
 library(tidyverse)
 library(lubridate)
 
+## source: https://www.bto.org/our-science/projects/gbw/results/long-term-patterns
+## process
+## go to web page above and choose species
+## drag slider under chart to show full range of data
+## charting tech is highcharts
+## data is stored in web page so we need to extract it
+## right click on chart and choose inspect
+## find <g class = highcharts-series highcharts-series-0
+## click black arrow to expand
+## this should show data
+## right click and select copy element
+## past into a text-editor
+## select just the data (starts with 0 and ends with 215)
+## open a spreadsheet, copy data and paste into first cell
+## click data> text to columns > delimimted and choose other L as separator = press OK
+## select data and paste special > transpose into a new sheet
+## run data > text to columns again. this time choose space as separator
+## tidy the data into 2 columns and label columns as `date` and `rate`
+## save sheet as a csv (e.g. greenfinch.csv)
+## this script takes the data and rescales it  - you need to go back to the chart on the web
+## and identify max and min values
+## add dates
+
 s_thrush %>%
   ggplot(aes(date ,-rate)) +
   geom_line()
