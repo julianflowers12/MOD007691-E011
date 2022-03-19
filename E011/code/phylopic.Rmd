@@ -16,7 +16,7 @@ library(magick)
 ## Using `rphylopic`
 
 ```{r}
-gf <- name_search("House sparrow", options = "namebankID")[1,]
+gf <- name_search("Starling", options = "namebankID")[1,]
 
 id <- name_images(uuid = gf$uid[1])
 
@@ -25,9 +25,27 @@ uid <- id$same[[1]]$uid
 
 cat <- rphylopic::image_data(input = uid, size = "thumb")
 
+cat[[1]]
 
-img <- magick::image_read("http://phylopic.org/assets/images/submissions/c64e59f8-5d99-4cf5-bcfd-c73022e288e2.64.png")
+get_image <- function(search, size){
+  require(magick)
+  require(rphylopic)
+  
+  ## get uid
+  
+  im <- name_search(search, options = "namebankID")[1,]
+  id <- name_images(uuid = im$uid[1])
+  uid <- id$same[[1]]$uid
+  
+  img <- paste0("http://phylopic.org/assets/images/submissions/", uid, ".", size, ".png") %>%
+    image_read()
+  
+  img 
+  
+}
 
-magick::image_fill(img, color = "red")
+g <- get_image(search = "Columba", 128)
+
+g
 ```
 
