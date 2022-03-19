@@ -141,3 +141,28 @@ gdf %>%
   scale_x_date(breaks = "year") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+### nuthatch
+
+nhmin <- 8.4
+nhmax <- 26.1
+
+nuthatch %>%
+  slice(-c(1)) %>%
+  # ggplot() +
+  # geom_histogram(aes(rate))
+  mutate(r = (max(rate) -rate)/scale +  nhmin,
+         series = row_number(),
+         days = (series - 1) * 30,
+         date1 = min_date + days(days)) %>%
+  ggplot(aes(date1, r)) +
+  geom_point(pch = 1) +
+  geom_line(colour = "grey") +
+  geom_smooth(method = "gam") +
+  labs(title = "Average weekly recording rate",
+       subtitle = "Nuthatch",
+       y = "Recording rate") +
+  scale_x_date(breaks = "year") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
