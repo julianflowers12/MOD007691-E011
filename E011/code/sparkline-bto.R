@@ -1,4 +1,4 @@
-library(sf); library(tidyverse); library(gt)
+library(sf); library(tidyverse); library(gt); library(ggrepel)
 # if needed install.packages("remotes")
 remotes::install_github("jthomasmock/gtExtras")
 
@@ -8,7 +8,48 @@ path <- here::here("E011/data")
 
 list_files <- list.files(path, "csv", full.names = T)
 
-bto_data <- map_dfr(list_files[c(1:2, 4:7, 11:16, 18:20, 22:24, 26:27 )], read_csv)
+bto_data <- map_dfr(list_files[c(1:4, 5:8, 12:24, 26:34)], read_csv)
+
+bto_data %>%
+  count(spcode) %>%
+  View()
+
+
+
+g <- bto_data %>%
+  filter(year > 1994) %>%
+  group_by(spcode) %>%
+  select(year, sm, spcode) %>%
+  fill(sm, .direction = "up") %>%
+  arrange(spcode, desc(year)) %>%
+  mutate(trend = sm/sm[25] * 100) %>%
+  mutate(sc = ifelse(spcode %in% c("goldf", "grswo"), "increases",
+                     ifelse(spcode %in% c("grefi", "swift",
+                                          "starl", "housp", "houma",
+                                          "chaff", "sonth"), "red", "neutral" )))
+
+end <- g %>%
+  group_by(spcode) %>%
+  filter(year == max(year),
+         sc !=  "neutral")
+
+g %>%
+  ggplot(aes(year, trend, group = spcode, colour = sc)) +
+  geom_line(show.legend = FALSE) +
+  geom_text_repel(aes(label = spcode, year, trend), data = end, nudge_x = 2, show.legend = FALSE) +
+  geom_hline(yintercept = 100) +
+  theme(panel.background = element_rect(fill = "#E5F5BA"),
+        panel.grid = element_blank()) +
+  scale_color_manual(values  = c("darkgreen", "grey60", "red")) +
+  labs(title = "Relative change in abundance since 1995",
+       y = "Relative change",
+       x = "Year",
+       caption = "Baseline year 1995: 100") +
+  theme(plot.title.position = "plot",
+        plot.title = element_text(size = 16),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
 
 pluck(bto_data, "spcode") %>% unique()
 
@@ -90,6 +131,24 @@ bto_data_1 <- common_birds_data %>%
          rev_lci = 100 * sm_ll85/sm_ll85[25],
          rev_uci = 100 * sm_ul85/sm_ul85[25],
          change = reverse[1] - 100)
+
+ bto_data_2 %>%
+   filter(year == max(year)) %>%
+   select(year, reverse, species, spcode, sp2)
+
+ library(ggrepel)
+
+ sp <- bto_data_2 %>%
+   group_by(sp2) %>%
+   filter(year == max(year))
+
+bto_data_2 %>%
+   drop_na() %>%
+   ggplot() +
+   geom_line(aes(year, reverse, colour = sp2)) +
+   geom_text_repel(aes(label = sp2, year, sm), data = sp, max.overlaps = 20,
+                    size = 3)
+   theme_light()
 
  bto_data_2 %>%
    select(change) %>%
