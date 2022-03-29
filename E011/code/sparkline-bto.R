@@ -1,4 +1,4 @@
-library(sf); library(tidyverse); library(gt); library(ggrepel)
+library(sf); library(tidyverse); library(gt); library(ggrepel); library(geomtextpath)
 # if needed install.packages("remotes")
 remotes::install_github("jthomasmock/gtExtras")
 
@@ -34,12 +34,14 @@ end <- g %>%
          sc !=  "neutral")
 
 g %>%
+  filter(spcode %in% c("bluti", "chaff", "goldf", "grefi", "grswo", "housp", "sonth")) %>%
   ggplot(aes(year, trend, group = spcode, colour = sc)) +
-  geom_line(show.legend = FALSE) +
-  geom_text_repel(aes(label = spcode, year, trend), data = end, nudge_x = 2, show.legend = FALSE) +
+  stat_smooth(aes(label = spcode), show.legend = FALSE,
+            geom = "textpath") +
+  #geom_text_repel(aes(label = spcode, year, trend), data = end, nudge_x = 2, show.legend = FALSE) +
   geom_hline(yintercept = 100) +
-  theme(panel.background = element_rect(fill = "#E5F5BA"),
-        panel.grid = element_blank()) +
+  theme(panel.background = element_blank()) +
+        #panel.grid = element_blank()) +
   scale_color_manual(values  = c("darkgreen", "grey60", "red")) +
   labs(title = "Relative change in abundance since 1995",
        y = "Relative change",

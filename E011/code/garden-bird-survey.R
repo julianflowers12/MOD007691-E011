@@ -276,11 +276,11 @@ min_max <- data.frame(
 
 )
 
-map_dfr(gb, import_fn) %>%
+df <- map_dfr(gb, import_fn) %>%
   left_join(min_max) %>%
   group_by(sp) %>%
-
-  mutate(maxr = max(rate),
+   mutate(scale = (max(rate) - min(rate))/(max - min),
+         maxr = max(rate),
          z = maxr - rate,
          a = z/scale,
          b = a + min,
@@ -295,7 +295,9 @@ map_dfr(gb, import_fn) %>%
                        length.out = 326),
          year = rep(1995:2022, each = 12, length.out = 326),
          date2 = paste(year = year, month = date1, day = "01", sep = "-"),
-         date2 = lubridate::ymd(date2)) %>%
+         date2 = lubridate::ymd(date2))
+
+df %>%
 
   ggplot(aes(date2, b, group = sp)) +
   stat_smooth(
@@ -304,6 +306,7 @@ map_dfr(gb, import_fn) %>%
     color = "red",
     linecolor = "navyblue"
   ) +
+  geom_line(aes(date2, b), data = df %>% filter(sp == "Greenfinch")) +
   labs(
     title = "Smoothed trend in proportion of birdfeeders visited",
     y = "% birdfeeders",
@@ -319,4 +322,5 @@ map_dfr(gb, import_fn) %>%
 
   scale_x_date(breaks = "2 years") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title.position = "plot")
+        plot.title.position = "plot",
+        plot.title = element_text(face = "bold"))
