@@ -2,7 +2,7 @@
 
 remotes::install_github("julianflowers/myScrapers")
 
-library(myScrapers);library(tidyverse); library(RISmed)
+library(myScrapers);library(tidyverse); library(RISmed); library(europepmc); library(fulltext)
 
 search <- "birds ecosystem service*[tw]"
 
@@ -17,3 +17,6 @@ res_sel <- res$abstracts %>%
   .[c(2, 3, 7, 8, 12, 13, 14, 21, 23, 25, 38, 39, 43, 47, 49, 51, 70, 76, 79, 81, 89, 90, 94, 100, 102, 104, 118, 130, 134, 138,
       150, 154, 158, 169, 170, 182, 196, 203, 207, 214, 217, 226, 228),] %>%
   select(pmid, abstract)
+
+
+fulltext::

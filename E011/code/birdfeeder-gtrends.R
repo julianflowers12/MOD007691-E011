@@ -5,7 +5,7 @@ p_load(gtrendsR, zoo)
 
 bw <- gtrendsR::gtrends(c("bird feeder"), geo = "GB", time = "2015-01-01 2022-03-01")
 
-bw$interest_over_time %>%
+g <- bw$interest_over_time %>%
   mutate(rm = zoo::rollmean(hits, k = 3, align = "center", na.pad = TRUE)) %>%
   ggplot(aes(date, rm)) +
   geom_line(lty = "dotted") +
@@ -22,6 +22,10 @@ bw$interest_over_time %>%
        caption = "Source: https://trends.google.com/trends/?geo=GB\nGAM smooth fitted") +
   scale_y_continuous(position = "right")
 
+ggsave(g, paste0(here::here(), "/E011/images/bird-feeder.png"), device = "png")
+
 bw$interest_by_city
 
 gtrendsR::categories
+
+here::here()
