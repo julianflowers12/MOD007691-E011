@@ -15,7 +15,6 @@ bto_data %>%
   View()
 
 
-
 g <- bto_data %>%
   filter(year > 1994) %>%
   group_by(spcode) %>%
@@ -23,10 +22,10 @@ g <- bto_data %>%
   fill(sm, .direction = "up") %>%
   arrange(spcode, desc(year)) %>%
   mutate(trend = sm/sm[25] * 100) %>%
-  mutate(sc = ifelse(spcode %in% c("goldf", "grswo"), "increases",
-                     ifelse(spcode %in% c("grefi", "swift",
-                                          "starl", "housp", "houma",
-                                          "chaff", "sonth"), "red", "neutral" )))
+  mutate(sc = ifelse(spcode %in% c("grefi", "starl", "housp"), "red",
+                     ifelse(spcode %in% c("swift",
+                                          "houma", "dunno",
+                                          "sonth"), "amber", "green" )))
 
 end <- g %>%
   group_by(spcode) %>%
@@ -34,21 +33,35 @@ end <- g %>%
          sc !=  "neutral")
 
 g %>%
-  filter(spcode %in% c("bluti", "chaff", "goldf", "grefi", "grswo", "housp", "sonth")) %>%
+  filter(spcode %in% c("bluti", "chaff", "goldf", "grefi", "grswo", "housp", "sonth", "starl", "dunno")) %>%
+  mutate(spcode = case_when(spcode == "bluti" ~ "Blue Tit",
+                            spcode == "chaff" ~ "Chaffinch",
+                            spcode == "housp" ~ "House Sparrow",
+                            spcode == "grefi" ~ "Greenfinch",
+                            spcode == "sonth" ~ "Song Thrush",
+                            spcode == "goldf" ~ "Goldfinch",
+                            spcode == "grswo" ~ "Gt Sp Woodpecker",
+                            spcode == "starl" ~ "Starling",
+                            spcode == "dunno" ~ "Dunnock"
+
+                            )) %>%
   ggplot(aes(year, trend, group = spcode, colour = sc)) +
   stat_smooth(aes(label = spcode), show.legend = FALSE,
-            geom = "textpath") +
+            geom = "textpath",
+            hjust = 1.05,
+            vjust = 0.5) +
   #geom_text_repel(aes(label = spcode, year, trend), data = end, nudge_x = 2, show.legend = FALSE) +
   geom_hline(yintercept = 100) +
-  theme(panel.background = element_blank()) +
+  theme(panel.background = element_rect(fill = "#EDF2BD")) +
         #panel.grid = element_blank()) +
-  scale_color_manual(values  = c("darkgreen", "grey60", "red")) +
-  labs(title = "Relative change in abundance since 1995",
+  scale_color_manual(values  = c("goldenrod", "darkgreen", "red")) +
+  labs(title = "Relative change in selected species abundance since 1995",
+       subtitle = "Smoothed data",
        y = "Relative change",
        x = "Year",
-       caption = "Baseline year 1995: 100") +
+       caption = "Baseline year 1995: 100\nSource: BTO Trends") +
   theme(plot.title.position = "plot",
-        plot.title = element_text(size = 16),
+        plot.title = element_text(size = 16, face = "bold"),
         axis.text = element_text(size = 12),
         axis.title = element_text(size = 14))
 
@@ -76,7 +89,6 @@ get_image <- function(search, size){
 
 common <- pluck(redlist, "species") %>%
   unique() %>%
-
   .[c(59, 136, 164, 166, 174, 195, 196, 199, 209, 216, 226, 235, 218, 234, 176, 160, 144, 28, 178, 201)]
 
 rl_common <- redlist %>%
@@ -111,8 +123,8 @@ rl_common %>%
 
 common_birds_data <- bto_data %>%
   left_join(rl_common) %>%
-  left_join(rl, by = "species") %>%
-  dplyr::select(year, sm, sm_ll85, sm_ul85, species, spcode, iucn.x, redlist.x, vals.x, sp2, mean_2021, rank_2021, mean_2020)
+  #left_join(rl, by = "species") %>%
+  dplyr::select(year, sm, sm_ll85, sm_ul85, species, spcode, iucn, redlist, vals, sp2, mean_2021, rank_2021, mean_2020)
 
 pluck(common_birds_data, "spcode") %>%
   unique()

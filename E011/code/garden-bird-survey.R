@@ -25,25 +25,31 @@ library(geomtextpath)
 ## and identify max and min values
 ## add dates
 
-s_thrush %>%
-  ggplot(aes(date ,-rate)) +
-  geom_line()
+# s_thrush %>%
+#   ggplot(aes(date ,-rate)) +
+#   geom_line()
+#
+# minst <- 3.2
+# range_old <- 53.3 - 3.2
+# range_new <- max(st$rate) - min(st$rate)
+#
+# scale = range_new / range_old
+#
+# (max(st$rate) - min(st$rate))/scale +3.2
+#
+# min(st$rate) / scale
+#
+#
+# new_min = min(st$rate)/scale
+#
+# min_date <- as.Date("1995-01-01")
+# d2 = min_date +days(7)
 
-minst <- 3.2
-range_old <- 53.3 - 3.2
-range_new <- max(st$rate) - min(st$rate)
+h <- here::here("E011/data")
 
-scale = range_new / range_old
+files <- list.files(h, "csv", full.names = T)
 
-(max(st$rate) - min(st$rate))/scale +3.2
-
-min(st$rate) / scale
-
-
-new_min = min(st$rate)/scale
-
-min_date <- as.Date("1995-01-01")
-d2 = min_date +days(7)
+files[c(5, 13, 14, 15, 16, 17, 18, 21, 34, 37, 23)]
 
 st %>%
   slice(-c(1)) %>%
@@ -253,7 +259,7 @@ h <- here::here("E011/data")
 
 f <- list.files(h, "csv", full.names = TRUE)
 
-gb <-  f[c(5, 13, 14, 15, 16, 17, 32)]
+gb <-  f[c(5, 13, 14, 15, 16, 17, 33)]
 
 import_fn <- function(x){
   require(tidyverse)
@@ -264,6 +270,10 @@ import_fn <- function(x){
   x
 }
 
+import_fn(gb[7])
+
+
+
 cfmin <- 35.8
 cfmax <- 85.8
 
@@ -271,13 +281,14 @@ min_max <- data.frame(
 
   sp = c("cf", "gbfs_blue_tit", "gbfs_gsw", "gdf", "gf", "st", "gbfs_house_sparrow"),
   min = c(31.5, 83.3, 6.6, 6.9, 23.3, 3.2, 56.9),
-  max = c(85.8, 97, 33.4, 71.2, 82.7, 53.3, 88.6)
+  max = c(85.8, 97, 33.4, 71.2, 82.7, 55.3, 88.6)
 
 
 )
 
 df <- map_dfr(gb, import_fn) %>%
   left_join(min_max) %>%
+  drop_na() %>%
   group_by(sp) %>%
    mutate(scale = (max(rate) - min(rate))/(max - min),
          maxr = max(rate),
@@ -291,11 +302,15 @@ df <- map_dfr(gb, import_fn) %>%
                         str_detect(sp, "gsw") ~ "Great spotted woodpecker",
                         str_detect(sp, "st") ~ "Song thrush",
                         str_detect(sp, "gdf") ~ "Goldfinch")) %>%
+  add_count() %>%
   mutate(date1 = rep(c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep","Oct", "Nov", "Dec"),
                        length.out = 326),
          year = rep(1995:2022, each = 12, length.out = 326),
          date2 = paste(year = year, month = date1, day = "01", sep = "-"),
          date2 = lubridate::ymd(date2))
+
+
+2188/7
 
 df %>%
 
