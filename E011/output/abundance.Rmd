@@ -1,0 +1,102 @@
+---
+title: "Bird trends"
+author: "Julian Flowers"
+date: "31/03/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(geomtextpath)
+
+```
+
+## Garden bird watch
+
+```{r}
+
+h <- here::here("E011/data")
+
+df1 <- read_rds(paste0(h, "/gb.rds"))
+```
+
+
+```{r}
+min_max <- data.frame(
+
+  sp = c("cf", "gbfs_blue_tit", "gbfs_gsw", "gdf", "gf", "sthrush", "gbfs_house_sparrow", "grtit", "starl"),
+  min = c(31.5, 83.3, 6.6, 6.9, 23.3, 3.2, 56.9, 62.3, 31.1),
+  max = c(85.8, 97, 33.4, 71.2, 82.7, 55.3, 88.6, 86.1, 84)
+)
+
+
+
+```
+
+
+```{r}
+df1 %>%
+  left_join(min_max) %>%
+  janitor::remove_empty() %>%
+  group_by(sp) %>%
+  mutate(scale = (max(rate) - min(rate))/(max - min),
+         maxr = max(rate),
+         z = maxr - rate,
+         a = z/scale,
+         b = a + min,
+         sp1 = case_when(str_detect(sp, "blue") ~ "Blue tit",
+                        str_detect(sp, "house") ~ "House sparrow",
+                        str_detect(sp, "cf") ~ "Chaffinch",
+                        str_detect(sp, "gf") ~ "Greenfinch",
+                        str_detect(sp, "gsw") ~ "Great spotted woodpecker",
+                        str_detect(sp, "sthrush") ~ "Song thrush",
+                        str_detect(sp, "grtit") ~ "Great tit",
+                        str_detect(sp, "gdf") ~ "Goldfinch", 
+                        str_detect(sp, "starl") ~ "Starling")) 
+  
+
+```
+
+```{r}
+df1 <- df1 %>%
+  mutate(date1 = rep(c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep","Oct", "Nov", "Dec"),
+                       length.out = 326),
+         year = rep(1995:2022, each = 12, length.out = 326),
+         date2 = paste(year = year, month = date1, day = "01", sep = "-"),
+         date2 = lubridate::ymd(date2))
+```
+
+```{r}
+
+df1 %>%
+  ggplot(aes(date2, b, group = sp1)) +
+  stat_smooth(
+    aes(label = sp1),
+    geom = "textpath",
+    color = "red",
+    linecolor = "navyblue",
+    hjust = 1
+  ) +
+  #geom_line(aes(date2, b), data = df %>% filter(sp == "Greenfinch")) +
+  labs(
+    title = "Smoothed trend in proportion of gardens visited",
+    y = "% birdfeeders",
+    x = "Year",
+    caption = "Source: BTO Garden Birdwatch Survey"
+
+  ) +
+  theme(
+        panel.background = element_rect("#EDF2BD"),
+        legend.position = "",
+        panel.grid.minor = element_blank()
+    ) +
+
+  scale_x_date(breaks = "2 years") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title.position = "plot",
+        plot.title = element_text(face = "bold", size = 14))
+
+```
