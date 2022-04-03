@@ -1,4 +1,4 @@
-library(sf); library(tidyverse); library(gt); library(ggrepel); library(geomtextpath)
+library(sf); library(tidyverse); library(gt); library(ggrepel); library(geomtextpath); library(editData)
 # if needed install.packages("remotes")
 remotes::install_github("jthomasmock/gtExtras")
 
@@ -8,8 +8,13 @@ path <- here::here("E011/data")
 
 list_files <- list.files(path, "csv", full.names = T)
 
-bto_data <- map_dfr(list_files[c(1:4, 5:8, 12:24, 26:34)], read_csv)
+bto_data <- map_dfr(list_files[c(1:2, 4, 6:8, 12, 19:21, 23, 25,
+                                 27:29, 32, 34, 37, 41:42)], read_csv)
 
+unique(bto_data$spcode)
+
+bto_data %>%
+  write_rds("E011/data/bto_data.rds")
 bto_data %>%
   count(spcode) %>%
   View()
@@ -33,7 +38,7 @@ end <- g %>%
          sc !=  "neutral")
 
 g %>%
-  filter(spcode %in% c("bluti", "chaff", "goldf", "grefi", "grswo", "housp", "sonth", "starl", "dunno")) %>%
+  filter(spcode %in% c("bluti", "chaff", "goldf", "greti", "grefi", "grswo", "housp", "sonth", "starl", "dunno")) %>%
   mutate(spcode = case_when(spcode == "bluti" ~ "Blue Tit",
                             spcode == "chaff" ~ "Chaffinch",
                             spcode == "housp" ~ "House Sparrow",
@@ -42,7 +47,8 @@ g %>%
                             spcode == "goldf" ~ "Goldfinch",
                             spcode == "grswo" ~ "Gt Sp Woodpecker",
                             spcode == "starl" ~ "Starling",
-                            spcode == "dunno" ~ "Dunnock"
+                            spcode == "dunno" ~ "Dunnock",
+                            spcode == "greti" ~ "Great Tit"
 
                             )) %>%
   ggplot(aes(year, trend, group = spcode, colour = sc)) +
@@ -52,7 +58,8 @@ g %>%
             vjust = 0.5) +
   #geom_text_repel(aes(label = spcode, year, trend), data = end, nudge_x = 2, show.legend = FALSE) +
   geom_hline(yintercept = 100) +
-  theme(panel.background = element_rect(fill = "#EDF2BD")) +
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white")) +
         #panel.grid = element_blank()) +
   scale_color_manual(values  = c("goldenrod", "darkgreen", "red")) +
   labs(title = "Relative change in selected species abundance since 1995",
@@ -63,7 +70,9 @@ g %>%
   theme(plot.title.position = "plot",
         plot.title = element_text(size = 16, face = "bold"),
         axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14))
+        axis.title = element_text(size = 14)) +
+  scale_y_continuous(position = "right")
+
 
 
 pluck(bto_data, "spcode") %>% unique()
@@ -115,6 +124,17 @@ rl_common <- redlist %>%
                             str_detect(species, "Chaffinch") ~ "chaff")
          )
 
+rl_common <-
+  read_csv("rl_common.csv")
+
+## images
+
+im <- here::here("E011/images")
+
+jpegs <- list.files(im, "jpeg", full.names = T)
+
+jpegs <- jpegs[c(1:6, 8:12, 15:18, 20:22, 24:25)]
+length(jpegs)
 
 rl_common %>%
   pluck("species") %>%
@@ -124,23 +144,25 @@ rl_common %>%
 common_birds_data <- bto_data %>%
   left_join(rl_common) %>%
   #left_join(rl, by = "species") %>%
-  dplyr::select(year, sm, sm_ll85, sm_ul85, species, spcode, iucn, redlist, vals, sp2, mean_2021, rank_2021, mean_2020)
+  dplyr::select(year, sm, sm_ll85, sm_ul85, species, spcode, iucn, redlist, vals)
+
+
 
 pluck(common_birds_data, "spcode") %>%
   unique()
 
 bto_data_1 <- common_birds_data %>%
+  filter(year > 1994) %>%
   distinct() %>%
-  pivot_wider(names_from = "redlist.x", values_from = "vals.x") %>%
+  pivot_wider(names_from = "redlist", values_from = "vals") %>%
   janitor::remove_empty()
 
  bto_data_2 <- bto_data_1 %>%
-  filter(year > 1994) %>%
   group_by(spcode) %>%
   add_count() %>%
   ungroup() %>%
-  group_by(sp2) %>%
-  arrange(sp2, desc(year)) %>%
+  group_by(spcode) %>%
+  arrange(spcode, desc(year)) %>%
   mutate(reverse = 100 * sm/sm[25],
          rev_lci = 100 * sm_ll85/sm_ll85[25],
          rev_uci = 100 * sm_ul85/sm_ul85[25],
@@ -148,12 +170,12 @@ bto_data_1 <- common_birds_data %>%
 
  bto_data_2 %>%
    filter(year == max(year)) %>%
-   select(year, reverse, species, spcode, sp2)
+   select(year, reverse, species, spcode)
 
  library(ggrepel)
 
  sp <- bto_data_2 %>%
-   group_by(sp2) %>%
+   group_by(spcode) %>%
    filter(year == max(year))
 
 bto_data_2 %>%
@@ -186,8 +208,8 @@ bto_data_2 %>%
 bto_data_2 %>%
   drop_na() %>%
   #slice(1:20) %>%
-  group_by(Species = sp2) %>%
-  arrange(rank_2021, year) %>%
+  group_by(Species = spcode) %>%
+  arrange(year) %>%
   mutate(Species = str_replace_all(Species, "_", " ")) %>%
   summarise(`Trend \n1995 - 2019` = list(reverse), .groups = "drop",
             `% change in population \n1995 to 2021` = mean(change),
@@ -196,15 +218,16 @@ bto_data_2 %>%
             `2009` = unique(`2009`),
             `2015` = unique(`2015`),
             `2021` = unique(`2021`),
-            IUCN = unique(iucn.x),
-            rank = mean(rank_2021)
+            IUCN = unique(iucn),
+            #rank = mean(rank_2021)
             ) |>
  # unnest(cols = "Trend \n1995 - 2019")
-  drop_na() %>%
-  arrange(rank) %>%
-  select(-c(rank, IUCN)) %>%
+  #drop_na() %>%
+  #arrange(rank) %>%
+  select(-c(IUCN)) %>%
+  cbind(jpegs)
   gt() %>%
-  gt_theme_nytimes() %>%
+  gt_theme_espn() %>%
   gt_plt_bar(`% change in population \n1995 to 2021`, scale_type = "number", text_color = "white", color = "blue") %>%
   tab_style(
     style = cell_text(color = "red", weight = "bold"),
