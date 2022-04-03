@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2022-04-03T13:12:28.581Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36" etag="Nwu34v_O7g1LtSwrBv3a" version="17.4.0" type="github">
+<mxfile host="app.diagrams.net" modified="2022-04-03T13:13:40.661Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36" etag="4cZRVnceUxewrEv8gorE" version="17.4.0" type="github">
   <diagram id="9d4OVd9io9vZIaMg1Rst" name="Page-1">
-    <mxGraphModel dx="946" dy="614" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1351" dy="877" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -132,9 +132,6 @@
         <mxCell id="xqFLC08Axi9LP9D50j1R-52" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="xqFLC08Axi9LP9D50j1R-63" source="xqFLC08Axi9LP9D50j1R-15" target="xqFLC08Axi9LP9D50j1R-51" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="xqFLC08Axi9LP9D50j1R-55" value="20% of European breeding or wintering population" style="ellipse;whiteSpace=wrap;html=1;rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="xqFLC08Axi9LP9D50j1R-63" vertex="1">
-          <mxGeometry x="523.6363636363635" y="455.3846153846153" width="196.36363636363635" height="24.615384615384613" as="geometry" />
-        </mxCell>
         <mxCell id="xqFLC08Axi9LP9D50j1R-56" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="xqFLC08Axi9LP9D50j1R-63" source="xqFLC08Axi9LP9D50j1R-17" target="xqFLC08Axi9LP9D50j1R-55" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -173,6 +170,9 @@
         </mxCell>
         <mxCell id="XMSJkgUr-NcR9JwQblPC-8" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="xqFLC08Axi9LP9D50j1R-63">
           <mxGeometry x="370" y="84.87" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="xqFLC08Axi9LP9D50j1R-55" value="20% of European breeding or wintering population" style="ellipse;whiteSpace=wrap;html=1;rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="xqFLC08Axi9LP9D50j1R-63" vertex="1">
+          <mxGeometry x="523.6363636363635" y="455.3846153846153" width="196.36363636363635" height="24.615384615384613" as="geometry" />
         </mxCell>
         <mxCell id="xqFLC08Axi9LP9D50j1R-64" value="&lt;font color=&quot;#ff0000&quot;&gt;&lt;b&gt;RED-LIST&lt;/b&gt;&lt;/font&gt;" style="text;html=1;strokeColor=#666666;fillColor=#f5f5f5;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#333333;" parent="1" vertex="1">
           <mxGeometry x="100" y="620" width="60" height="30" as="geometry" />
