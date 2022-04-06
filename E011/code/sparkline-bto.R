@@ -9,7 +9,9 @@ path <- here::here("E011/data")
 list_files <- list.files(path, "csv", full.names = T)
 
 bto_data <- map_dfr(list_files[c(1:2, 4, 6:8, 12, 19:21, 23, 25,
-                                 27:29, 32, 34, 37, 41:42)], read_csv)
+                                 27:29, 33, 35, 38, 42:43)], read_csv)
+
+
 
 unique(bto_data$spcode)
 
@@ -79,6 +81,9 @@ pluck(bto_data, "spcode") %>% unique()
 
 redlist <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/redlist1.rds")
 
+redlist %>%
+  filter(str_detect(species, "Woodpec"))
+
 get_image <- function(search, size){
   require(magick)
   require(rphylopic)
@@ -100,6 +105,8 @@ common <- pluck(redlist, "species") %>%
   unique() %>%
   .[c(59, 136, 164, 166, 174, 195, 196, 199, 209, 216, 226, 235, 218, 234, 176, 160, 144, 28, 178, 201)]
 
+common
+
 rl_common <- redlist %>%
   filter(species %in% common) %>%
   mutate(spcode = case_when(str_detect(species, "Blue") ~ "bluti",
@@ -108,8 +115,8 @@ rl_common <- redlist %>%
                             str_detect(species, "Collar") ~ "coldo",
                             str_detect(species, "Dunnoc") ~ "dunno",
                             str_detect(species, "Gold") ~ "goldf",
-                            str_detect(species, "Great") ~ "greti",
-                            str_detect(species, "Spotted") ~ "grswo",
+                            str_detect(species, "Great Tit") ~ "greti",
+                            str_detect(species, "Woodpecker") ~ "grswo",
                             str_detect(species, "Sparrow") ~ "housp",
                             str_detect(species, "Jack") ~ "jackd",
                             str_detect(species, "Magpi") ~ "magpi",
@@ -124,8 +131,16 @@ rl_common <- redlist %>%
                             str_detect(species, "Chaffinch") ~ "chaff")
          )
 
-rl_common <-
-  read_csv("rl_common.csv")
+rl_common <- rl_common %>%
+  mutate(word1 = word(species, -2),
+         word2 = word(species, -1),
+         ln = paste(word1, word2),
+        sp = str_remove(species, ln))
+
+%>%
+  pluck("word")
+  filter(str_detect(species, "Woodp"))
+
 
 ## images
 
@@ -137,14 +152,16 @@ jpegs <- jpegs[c(1:6, 8:12, 15:18, 20:22, 24:25)]
 length(jpegs)
 
 rl_common %>%
+  filter(spcode == "grswo")
   pluck("species") %>%
   unique()
 
 
 common_birds_data <- bto_data %>%
+  #filter(spcode == "robin")
   left_join(rl_common) %>%
   #left_join(rl, by = "species") %>%
-  dplyr::select(year, sm, sm_ll85, sm_ul85, species, spcode, iucn, redlist, vals)
+  dplyr::select(year, sm, sm_ll85, sm_ul85, sp, spcode, iucn, redlist, vals)
 
 
 
@@ -156,6 +173,8 @@ bto_data_1 <- common_birds_data %>%
   distinct() %>%
   pivot_wider(names_from = "redlist", values_from = "vals") %>%
   janitor::remove_empty()
+
+filter(bto_data_1, spcode == "grswo")
 
  bto_data_2 <- bto_data_1 %>%
   group_by(spcode) %>%
@@ -170,7 +189,7 @@ bto_data_1 <- common_birds_data %>%
 
  bto_data_2 %>%
    filter(year == max(year)) %>%
-   select(year, reverse, species, spcode)
+   select(year, reverse, sp, spcode)
 
  library(ggrepel)
 
@@ -181,8 +200,8 @@ bto_data_1 <- common_birds_data %>%
 bto_data_2 %>%
    drop_na() %>%
    ggplot() +
-   geom_line(aes(year, reverse, colour = sp2)) +
-   geom_text_repel(aes(label = sp2, year, sm), data = sp, max.overlaps = 20,
+   geom_line(aes(year, reverse, colour = spcode)) +
+   geom_text_repel(aes(label = spcode, year, sm), data = sp, max.overlaps = 20,
                     size = 3)
    theme_light()
 
@@ -201,14 +220,16 @@ bto_data_2 %>%
   geom_hline(yintercept = 100, colour= "red", lty = "dotted") +
   theme(panel.grid = element_blank(),
         panel.background = element_rect(fill = NULL)) +
-  facet_wrap(~sp2)
+  facet_wrap(~sp)
 
+library(gt); library(gtExtras)
 
+bto_data_2[str_detect(bto_data_2$spcode,"j"), ]
 
 bto_data_2 %>%
   drop_na() %>%
   #slice(1:20) %>%
-  group_by(Species = spcode) %>%
+  group_by(Species = sp) %>%
   arrange(year) %>%
   mutate(Species = str_replace_all(Species, "_", " ")) %>%
   summarise(`Trend \n1995 - 2019` = list(reverse), .groups = "drop",
@@ -218,23 +239,17 @@ bto_data_2 %>%
             `2009` = unique(`2009`),
             `2015` = unique(`2015`),
             `2021` = unique(`2021`),
-            IUCN = unique(iucn),
+            `IUCN category` = unique(iucn),
             #rank = mean(rank_2021)
             ) |>
- # unnest(cols = "Trend \n1995 - 2019")
-  #drop_na() %>%
-  #arrange(rank) %>%
-  select(-c(IUCN)) %>%
-  cbind(jpegs)
-  gt() %>%
-  gt_theme_espn() %>%
-  gt_plt_bar(`% change in population \n1995 to 2021`, scale_type = "number", text_color = "white", color = "blue") %>%
+  gt::gt() %>%
+  gtExtras::gt_theme_guardian() %>%
+  gt_plt_bar(`% change in population \n1995 to 2021`, scale_type = "number", text_color = "black", color = "grey") %>%
   tab_style(
     style = cell_text(color = "red", weight = "bold"),
     locations = cells_body(
       columns = vars(`1996`),
       rows = `1996` == "R")) %>%
-
   tab_style(
     style = cell_text(color = "darkgreen", weight = "bold"),
     locations = cells_body(
@@ -250,7 +265,6 @@ bto_data_2 %>%
     locations = cells_body(
       columns = vars(`2002`),
       rows = `2002` == "R")) %>%
-
   tab_style(
     style = cell_text(color = "darkgreen", weight = "bold"),
     locations = cells_body(
@@ -266,7 +280,6 @@ bto_data_2 %>%
     locations = cells_body(
       columns = vars(`2009`),
       rows = `2009` == "R")) %>%
-
   tab_style(
     style = cell_text(color = "darkgreen", weight = "bold"),
     locations = cells_body(
@@ -282,7 +295,6 @@ bto_data_2 %>%
     locations = cells_body(
       columns = vars(`2015`),
       rows = `2015` == "R")) %>%
-
   tab_style(
     style = cell_text(color = "darkgreen", weight = "bold"),
     locations = cells_body(
@@ -298,7 +310,6 @@ bto_data_2 %>%
     locations = cells_body(
       columns = vars(`2021`),
       rows = `2021` == "R")) %>%
-
   tab_style(
     style = cell_text(color = "darkgreen", weight = "bold"),
     locations = cells_body(
@@ -310,7 +321,7 @@ bto_data_2 %>%
       columns = vars(`2021`),
       rows = `2021` == "A")) %>%
   tab_spanner(
-    label = "Assessment year",
+    label = "BoCC assessment year",
     columns = vars(`1996`, `2002`, `2009`, `2015`, `2021`)
   ) %>%
   gt_sparkline(`Trend \n1995 - 2019`, type = "sparkline", same_limit = FALSE, label = TRUE) %>%
