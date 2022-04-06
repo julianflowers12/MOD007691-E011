@@ -34,13 +34,19 @@ bto_sp <-read_csv("https://datadryad.org/stash/downloads/file_stream/353903", sh
 
 ### birds pers bbs square - wide table
 
-birds_per_site <- read_csv("https://datadryad.org/stash/downloads/file_stream/353904" show_col_types = F)
+birds_per_site <- read_csv("https://datadryad.org/stash/downloads/file_stream/353904", show_col_types = F)
 
 bps_l <- birds_per_site %>%
   pivot_longer(names_to = "species",
                values_to = "count",
                cols = 2:ncol(.)) %>%
   mutate(bbs = str_remove(sid, "BBS_"))
+
+range <- bps_l %>%
+  complete(bbs, species) %>%
+  mutate(occ = ifelse(count > 0, 1, 0)) %>%
+  group_by(species) %>%
+  summarise(occ_count = sum(occ))
 
 gf <- bps_l %>%
   filter(species == "GREFI")
@@ -85,12 +91,31 @@ bps_l %>%
 
 ### map bbs squares
 
- %>%
-  st_as_sf(coords = c(x = "northing", y = "easting"), crs = 27700) %>%
+d <- here::here("E011/data")
+
+f <- list.files(d, "shp", full.names = T)
+
+onek <- st_read(f[[1]]) %>%
+  right_join(bps_l, by = c("PLAN_NO" = "bbs"))
+
+bound <- st_read(f[[3]])
+
+sp_list <- pluck(onek, "species") %>%
+  unique()
+
+onek %>%
+  #filter(species == "GREFI") %>%
+  filter(species %in% c("STARL", "HOUSP", "CHAFF", "GREFI", "WOODP", "GOLDF",
+                     "BLUTI", "GRETI", "SONTH", "JACKD", "WREN.", "BLABI")) %>%
   ggplot() +
-  geom_sf() +
+  geom_sf(data = bound, fill = "white") +
+  geom_sf(aes(colour = count), size = 1 ) +
   coord_sf() +
-  theme_void()
+  viridis::scale_colour_viridis(option = "rocket", direction = -1) +
+  theme_void() +
+  annotation_north_arrow(location = "tr") +
+  annotation_scale(location = "br") +
+  facet_wrap(~species)
 
 
 

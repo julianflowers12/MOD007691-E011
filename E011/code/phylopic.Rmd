@@ -16,14 +16,15 @@ library(magick)
 ## Using `rphylopic`
 
 ```{r}
-gf <- name_search("Starling", options = "namebankID")[1,]
+gf <- name_search("Parus major", options = "namebankID")[1,]
+str(gf)
 
-id <- name_images(uuid = gf$uid[1])
+id <- name_images(uuid = gf$uid)
 
-uid <- id$same[[1]]$uid
+uid <- id$uid
 
 
-cat <- rphylopic::image_data(input = uid, size = "thumb")
+cat <- rphylopic::image_data(input = id$same[[1]]$uid, size = "thumb")
 
 cat[[1]]
 
@@ -35,7 +36,7 @@ get_image <- function(search, size){
   
   im <- name_search(search, options = "namebankID")[1,]
   id <- name_images(uuid = im$uid[1])
-  uid <- id$same[[1]]$uid
+  uid <- id$supertaxa[[1]]$uid
   
   img <- paste0("http://phylopic.org/assets/images/submissions/", uid, ".", size, ".png") %>%
     image_read()
@@ -44,7 +45,7 @@ get_image <- function(search, size){
   
 }
 
-g <- get_image(search = "Columba", 128)
+g <- get_image(search = "Parus major", 128)
 
 g
 ```
