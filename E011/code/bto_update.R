@@ -60,6 +60,7 @@ bocc_combined <- bocc5 %>%
          scientific_name = hbw_bird_life_international_species_scientific_name,
          abundance = number_of_mature_individuals_based_on_woodward_et_al_2020,
          habitat = breeding_habitat_based_on_gibbons_et_al_1993_eaton_et_al_2015,
+         code = bto_2_letter_species_code,
          season = season_assessed_b_breeding_nb_non_breeding,
          #bocc5 = bo_cc5_assessment_breeding_seabird_assessment_were_taken_from_eaton_et_al_2015,
          iucn = global_iucn_01_01_2020_except_breeding_seabird_assessments_taken_from_bo_cc4,
@@ -83,7 +84,7 @@ a <- rl_common$ln %>%
 union(a, b)
 
 cb <- common_birds %>%
-  select(species = species.x, scientific_name, spcode, vals, season, habitat, abundance, iucn.y, redlist) %>%
+  select(code, species = species.x, scientific_name, spcode, vals, season, habitat, abundance, iucn.y, redlist) %>%
   pivot_wider(names_from = "redlist", values_from = "vals") %>%
   arrange(-abundance) %>%
   left_join(bto_data, by = "spcode")
@@ -94,12 +95,12 @@ cb %>%
   filter(year > 1994, season == "B") %>%
   group_by(species) %>%
   mutate(delta = sm/sm[1]) %>%
-  select(species, year, delta) %>%
+  select(code, species, year, delta) %>%
   ggplot(aes(year, delta, group = species )) +
   stat_smooth(
     method = "gam",
     geom = "textpath",
-    aes(label = species),
+    aes(label = code),
     hjust = 1
 
 
@@ -108,6 +109,32 @@ cb %>%
 scale_y_log10() +
 scale_hjust_discrete()
   count(species)
+
+
+cb %>%
+    filter(year > 1994, season == "B") %>%
+    group_by(species) %>%
+    mutate(delta = sm/sm[1]) %>%
+    select(code, species, year, delta, habitat, abundance, `2021`, iucn.y) %>%
+  ggplot(aes(year, delta, group = species, colour = `2021`, lwd = abundance )) +
+  stat_smooth(
+    method = "gam",
+    geom = "textpath",
+    aes(label = code),
+    hjust = 1.0,
+    size = 3
+) +
+  geom_hline(yintercept = 1, colour = "red", lty = 3) +
+  #scale_y_log10() +
+  scale_hjust_discrete() +
+  scale_color_manual(values = c("goldenrod", "darkgreen", "red")) +
+  xlim(c(1995, 2021)) +
+  theme(
+        panel.background = element_blank(),
+        legend.position = "",
+        axis.line = element_line()) +
+  facet_wrap(~habitat)
+
 
 
 

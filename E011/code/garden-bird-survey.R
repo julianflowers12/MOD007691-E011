@@ -259,7 +259,7 @@ h <- here::here("E011/data")
 
 f <- list.files(h, "csv", full.names = TRUE)
 
-gb <-  f[c(5, 13, 14, 15, 16, 17, 33)]
+gb <-  f[c(5, 13, 14, 15, 16, 17, 18, 33)]
 
 import_fn <- function(x){
   require(tidyverse)
@@ -279,9 +279,9 @@ cfmax <- 85.8
 
 min_max <- data.frame(
 
-  sp = c("cf", "gbfs_blue_tit", "gbfs_gsw", "gdf", "gf", "st", "gbfs_house_sparrow"),
-  min = c(31.5, 83.3, 6.6, 6.9, 23.3, 3.2, 56.9),
-  max = c(85.8, 97, 33.4, 71.2, 82.7, 55.3, 88.6)
+  sp = c("cf", "gbfs_blue_tit", "gbfs_gsw", "gdf", "gf", "st", "gbfs_house_sparrow", "gt"),
+  min = c(31.5, 83.3, 6.6, 6.9, 23.3, 3.2, 56.9, 62.3),
+  max = c(85.8, 97, 33.4, 71.2, 82.7, 55.3, 88.6, 86.1)
 
 
 )
@@ -301,7 +301,9 @@ df <- map_dfr(gb, import_fn) %>%
                         str_detect(sp, "gf") ~ "Greenfinch",
                         str_detect(sp, "gsw") ~ "Great spotted woodpecker",
                         str_detect(sp, "st") ~ "Song thrush",
-                        str_detect(sp, "gdf") ~ "Goldfinch")) %>%
+                        str_detect(sp, "gt") ~ "Great tit",
+                        str_detect(sp, "gdf") ~ "Goldfinch"),
+         ) %>%
   add_count() %>%
   mutate(date1 = rep(c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep","Oct", "Nov", "Dec"),
                        length.out = 326),
@@ -313,15 +315,15 @@ df <- map_dfr(gb, import_fn) %>%
 2188/7
 
 df %>%
-
   ggplot(aes(date2, b, group = sp)) +
   stat_smooth(
     aes(label = sp),
     geom = "textpath",
     color = "red",
-    linecolor = "navyblue"
+    linecolor = "navyblue",
+    hjust = 1
   ) +
-  geom_line(aes(date2, b), data = df %>% filter(sp == "Greenfinch")) +
+  #geom_line(aes(date2, b), data = df %>% filter(sp == "Greenfinch")) +
   labs(
     title = "Smoothed trend in proportion of birdfeeders visited",
     y = "% birdfeeders",
@@ -338,4 +340,4 @@ df %>%
   scale_x_date(breaks = "2 years") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         plot.title.position = "plot",
-        plot.title = element_text(face = "bold"))
+        plot.title = element_text(face = "bold", size = 14))

@@ -16,10 +16,12 @@ library(magick)
 ## Using `rphylopic`
 
 ```{r}
-gf <- name_search("Parus major", options = "namebankID")[1,]
+gf <- name_search("Corvus corone", options = "namebankID")[1,]
 str(gf)
 
 id <- name_images(uuid = gf$uid)
+
+id
 
 uid <- id$uid
 
@@ -45,7 +47,7 @@ get_image <- function(search, size){
   
 }
 
-g <- get_image(search = "Parus major", 128)
+g <- get_image(search = "Streptopelia decaocto", 128)
 
 g
 ```
