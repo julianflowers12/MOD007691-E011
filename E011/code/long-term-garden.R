@@ -92,3 +92,32 @@ combined_df %>%
   mutate(min_date = min(date2),
          max_date = max(date2)) %>%
   select(min_date, max_date)
+
+
+birds_data <- combined_df %>%
+  mutate(spcode = case_when(sp == "cf" ~ "chaff",
+                            sp == "gbfs_blue_tit" ~ "bluti",
+                            sp == "gbfs_gsw" ~ "grswo",
+                            sp == "gbfs_house_sparrow" ~ "housp",
+                            sp == "grtti" ~ "greti",
+                            sp == "gdf" ~ "goldf",
+                            sp == "gf" ~ "grefi",
+                            sp == "rob1n" ~ "robin",
+                            sp == "cacro" ~ "carcr",
+                            TRUE ~ sp)) %>%
+  left_join(common_birds)
+
+birds_data %>%
+  group_by(year, spcode) %>%
+  summarise(mean_g_rate = mean(b),
+            sm = mean(sm)) %>%
+  filter(spcode != "sp") %>%
+  ggplot(aes(group = spcode, x = year)) +
+  geom_line(aes(y = mean_g_rate)) +
+  geom_line(aes(y = sm / 3), colour = "red") +
+  scale_y_continuous(name = "N",
+                     sec.axis = sec_axis(~., "garden")) +
+  facet_wrap(~spcode)
+
+birds_data %>%
+  select(spcode)
