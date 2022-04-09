@@ -108,6 +108,9 @@ birds_data <- combined_df %>%
   left_join(common_birds)
 
 birds_data %>%
+  write_rds("birds_data.rds")
+
+birds_data %>%
   group_by(year, spcode) %>%
   summarise(mean_g_rate = mean(b),
             sm = mean(sm)) %>%

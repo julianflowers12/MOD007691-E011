@@ -71,12 +71,20 @@ rl_common <- read_csv("rl_common.csv")
 unique(rl_common$spcode)
 
 rl_common <- rl_common %>%
+  mutate(w1 = word(species, -1),
+         w2 = word(species, -2),
+         ln = paste(w2, w1)) %>%
   mutate(ln = case_when(str_detect(ln, "coron") ~ "Corvus corone",
                         str_detect(ln, "monedula") ~ "Corvus monedula",
                         TRUE ~ ln))
 
+
 common_birds <-bocc_combined %>%
   inner_join(rl_common, by = c("scientific_name" = "ln"))
+
+common_birds %>%
+  select(scientific_name, species.y, abundance, habitat, spcode, redlist, iucn.y, vals, vals1) %>%
+  write_rds("common_birds.rds")
 
 b <- common_birds$scientific_name %>%
   unique()
