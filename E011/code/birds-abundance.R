@@ -10,7 +10,7 @@ species_list <- list("wren", "house-sparrow", "blackbird", "song-thrush", "blue-
                      "mistle-thrush", "turtle-dove", "linnet", "redstart")
 
 get_details <- function(url = "https://www.rspb.org.uk/birds-and-wildlife/wildlife-guides/bird-a-z/", species){
-
+  require(rvest); required(tidyverse)
   paste0(url, species) %>%
   read_html() %>%
   html_nodes(".species-measurements-population__details-content") %>%

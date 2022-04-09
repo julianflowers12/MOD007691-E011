@@ -9,12 +9,12 @@ colnames(bbsdens) <- bbsdens[1,]
 
 bbsdens
 
-bbsdens <- bbsdens %>%
+bbsdens_l <- bbsdens %>%
   slice(-1) %>%
   janitor::clean_names() %>%
   pivot_longer(names_to = "year", values_to = "vals", cols = 2:ncol(.))
 
-sq <- bbsdens %>%
+sq <- bbsdens_l %>%
   filter(str_detect(species, "square")) %>%
   pluck("vals") %>%
   map(., parse_number) %>%
@@ -22,32 +22,33 @@ sq <- bbsdens %>%
 
 8046/27
 
-bbs_dens <- bbsdens %>%
+bbs_dens <- bbsdens_l %>%
   mutate(sq = rep(sq, 298)) %>%
   filter(!str_detect(species, "sq")) %>%
-  mutate_at(.vars = 3, parse_number) %>%
-  mutate(dens = vals / sq,
-         year = parse_number(year))
+  mutate_at(.vars = 2:3, parse_number) %>%
+  mutate(dens = vals / sq)
+
+bbs_dens %>%
+  write_rds("bbs_dens.rds")
 
 View(bbs_dens)
 
-species_denisty_plot <- function(species){
+species_density_plot <- function(species) {
 
-bbs_dens %>%
-  filter(str_detect(species, !!species)) %>%
-  ggplot(aes(year, dens)) +
-  geom_point() +
-  geom_smooth(method = "gam") +
-  labs(title = paste(species, "density from BBS: count per square km"),
-       y = "Count per km2",
-       x = "Year",
-       caption ="Source: https://app.bto.org/bbs-results/results/reg_lists/bbsdenslist-20.html") +
-  theme_minimal() +
-  scale_y_continuous(position = "right")
-
+  bbs_dens %>%
+    filter(str_detect(species, !!species)) %>%
+    ggplot(aes(year, dens)) +
+    geom_point() +
+    geom_smooth(method = "gam") +
+    labs(title = paste(species, "density from BBS: count per square km"),
+         y = "Count per km2",
+         x = "Year",
+         caption ="Source: https://app.bto.org/bbs-results/results/reg_lists/bbsdenslist-20.html") +
+    theme_minimal() +
+    scale_y_continuous(position = "right")
 }
 
-species_denisty_plot("Greenfinch")
+species_denisty_plot("Goldfinch")
 
 species_list <- unique(bbs_dens$species)
 

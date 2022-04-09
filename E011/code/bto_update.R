@@ -66,6 +66,9 @@ bocc_combined <- bocc5 %>%
          iucn = global_iucn_01_01_2020_except_breeding_seabird_assessments_taken_from_bo_cc4,
          europe = european_status_bird_life_international_2021_except_breeding_seabird_assessments_which_were_taken_from_eaton_et_al_2015)
 
+rl_common <- read_csv("rl_common.csv")
+
+unique(rl_common$spcode)
 
 rl_common <- rl_common %>%
   mutate(ln = case_when(str_detect(ln, "coron") ~ "Corvus corone",

@@ -21,7 +21,7 @@
 ############################
 
 library(pacman)
-p_load(tidyverse, readxl, curl, janitor, sf, ggspatial)
+p_load(tidyverse, readxl, curl, janitor, sf, ggspatial, corrplot, ggbeeswarm)
 
 ############################
 #
@@ -62,7 +62,7 @@ code_book <- read_delim("https://datadryad.org/stash/downloads/file_stream/35390
 code_book %>%
   View()
 
-### bbs squares
+ ### bbs squares
 
 bbs_squares <- urban_metrics %>%
   select(sid:northing) |>
@@ -119,8 +119,88 @@ onek %>%
 
 
 
+### urban predictors
+
+bps_l %>%
+  group_by(species) %>%
+  summarise(index = mean(count))
+
+birds_per_site %>%
+  .[, -1] %>%
+  cor() %>%
+  corrplot(method = "square", tl.cex = .5, tl.col = "black", order = "hclust", outline = FALSE)
+
+urban_predictors <- birds_per_site %>%
+  left_join(urban_metrics)
+
+pairs(urban_predictors[c(2:)])
+
+up1 <- urban_predictors %>%
+  pivot_longer(names_to = "species", values_to = "counts", cols = BLABI:SPARR)
+
+up1 %>%
+  glimpse()
+
+  pivot_longer(names_to = "metrics", values_to = "values", cols = c(areakm2, pc_building:climate)) %>%
+  select(-starts_with("xval"))
+
+urban_metrics %>%
+  .[, -c(1:7)] %>%
+  cor() %>%
+  corrplot(method = "square", tl.cex = .5, tl.col = "black", order = "hclust", outline = FALSE)
+
+urban_predictors %>%
+  select(ROBIN, WREN., BLUTI, GRETI, SONTH, BLABI, GRSWO, DUNNO, GREFI,
+         WOODP, CHAFF, COATI, GOLDF, contains("garden")|contains("road")) %>%
+  cor() %>%
+  corrplot(method = "square", tl.cex = .5, tl.col = "black", order = "hclust", outline = FALSE)
 
 
+up_summary <- up1 %>%
+  group_by(species, metrics) %>%
+  summarise(mean_count = mean(counts, na.rm = TRUE),
+            mean_metrics = mean(values))
 
 
+up_summary %>%
+  filter(str_detect(metrics, "den_")) %>%
+  ggplot(aes(mean_count, mean_metrics)) +
+  geom_point() +
+  facet_wrap(~metrics, scales = )
 
+umap <- select_if(urban_predictors, is.numeric) %>%
+  umap::umap(.)
+
+library(dbscan)
+
+clus <- umap$layout %>%
+  data.frame() %>%
+  #ggplot(aes(X1, X2)) +
+  #geom_point()
+  dbscan::hdbscan(., minPts = 25)
+
+clustering_mean_values <- urban_predictors %>%
+  bind_cols(cluster = clus$cluster) %>%
+  group_by(cluster) %>%
+  summarise(across(where(is.double), mean, na.rm = TRUE)) %>%
+  mutate(across(2:ncol(.), scale)) %>%
+  pivot_longer(names_to = "metrics", values_to = "values", cols = 2:ncol(.))
+
+
+clustering_mean_values %>%
+  mutate(cluster = factor(cluster),
+    across(where(is.double), scale)) %>%
+  ggplot(aes(factor(cluster), metrics, fill = values)) +
+  geom_tile() +
+  coord_fixed() +
+  viridis::scale_fill_viridis(option = "turbo") +
+  coord_flip() +
+  scale_colour_manual(position = "top") +
+  theme(axis.text.x  = element_text(angle = 45, hjust = 1, size = 6))
+
+clustering_mean_values %>%
+  filter(nchar(metrics) == 5) %>%
+  ggplot(aes(values[,1], factor(cluster))) +
+  geom_boxplot( aes(fill = factor(cluster)))
+
+  tail()
