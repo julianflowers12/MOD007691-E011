@@ -1,0 +1,22 @@
+---
+title: "BTO datasets"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*.
+
+```{r}
+
+library(tidyverse)
+
+common_birds <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/E011/data/common_birds.rds")
+birds_data <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/E011/data/birds_data.rds")
+bbs_dens <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/E011/data/bbs_dens.rds")
+bto_data <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/E011/data/bto_data.rds")
+
+birds_data %>%
+  mutate(coverage = plotpres / plotcov)
+
+```
