@@ -1,6 +1,8 @@
 ---
 title: "BTO datasets"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
@@ -20,3 +22,110 @@ birds_data %>%
   mutate(coverage = plotpres / plotcov)
 
 ```
+
+```{r}
+
+birds_data %>%
+  filter(spcode %in% c("starl")) %>%
+  select(date2, b, spcode) %>%
+  distinct()
+
+birds_data_wide <- birds_data %>%
+  ungroup() %>%
+  select(-species) %>%
+  #filter(spcode != "starl") %>%
+  select(spcode, date2, b) |>
+  distinct() |>
+  #count(spcode)
+  pivot_wider(names_from = "spcode", values_from = "b")
+
+pairs(birds_data_wide[,-1])
+
+birds_data_wide[, -1] %>%
+  cor() %>%
+  corrplot::corrplot(order = "hclust", method = "ellipse")
+
+
+
+```
+
+```{r}
+
+library(factoextra); library(FactoMineR)
+
+clus <- factoextra::eclust(birds_data_wide[, -1])
+
+
+
+pca <- FactoMineR::PCA(birds_data_wide[, -1])
+
+fviz_contrib(pca, choice = "var", axes = 1, top = 10)
+fviz_contrib(pca, choice = "var", axes = 2, top = 10)
+fviz_contrib(pca, choice = "var", axes = 3, top = 10)
+
+fviz_pca_var(pca)
+
+
+```
+
+```{r}
+
+library(umap); library(dbscan)
+
+umap_clus <- umap::umap(scale(birds_data_wide[, -1]) )
+  
+umap_clus_1 <- umap_clus$layout %>%
+  data.frame() 
+
+umap_clus_1 %>%
+  ggplot() +
+    geom_point(aes(X1, X2))
+
+c <- umap_clus_1 %>%
+  hdbscan(.,  minPts = 10)
+
+c$cluster
+
+b <- birds_data_wide %>%
+  cbind(clust= factor(c$cluster))
+
+
+
+
+```
+
+```{r}
+library(broom); library(mgcv); library(broom.mixed)
+
+g <- lm(grefi ~ ., data = b)
+
+tidy(g) %>%
+  filter(p.value < 0.05)
+
+augment(g, b) %>%
+  ggplot(aes(grefi, .fitted)) +
+  geom_point()
+
+
+
+```
+
+```{r}
+
+formula <-  starl ~ s(bluti) + s(grswo) + s(blabi) + s(housp) + s(coldo) + s(grefi) + s(sonth) + s(carcr) + s(chaff) + s(greti) + s(wren.) + s(woodp) + s(robin) + s(magpi) + clust + s(as.numeric(date2))
+
+gam <- bam(formula, data = b)
+
+tidy(gam) %>%
+  filter(p.value < 0.001)
+
+plot(gam, pages = 1)
+
+data.frame(b, pred = predict.bam(gam, b)) %>%
+  ggplot(aes(grefi, pred)) +
+  geom_point() +
+  geom_smooth(method = "lm") 
+  
+
+```
+
