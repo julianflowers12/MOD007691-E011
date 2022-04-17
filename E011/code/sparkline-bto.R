@@ -79,7 +79,7 @@ g %>%
 
 pluck(bto_data, "spcode") %>% unique()
 
-redlist <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/redlist1.rds")
+redlist <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/E011/data/redlist1.rds")
 
 redlist %>%
   filter(str_detect(species, "Woodpec"))
@@ -242,6 +242,11 @@ bto_data_2 %>%
             `IUCN category` = unique(iucn),
             #rank = mean(rank_2021)
             ) |>
+  mutate(`1996` = case_when(`1996` == "e" ~ "G",
+                            TRUE ~ `1996`),
+         Species = case_when(str_detect(Species, "Carrio") ~ "Carrion Crow",
+                             TRUE ~ Species)) %>%
+  arrange(-`% change in population \n1995 to 2021`) %>%
   gt::gt() %>%
   gtExtras::gt_theme_guardian() %>%
   gt_plt_bar(`% change in population \n1995 to 2021`, scale_type = "number", text_color = "black", color = "grey") %>%
@@ -325,6 +330,7 @@ bto_data_2 %>%
     columns = vars(`1996`, `2002`, `2009`, `2015`, `2021`)
   ) %>%
   gt_sparkline(`Trend \n1995 - 2019`, type = "sparkline", same_limit = FALSE, label = TRUE) %>%
+  gt::tab_source_note("LC = least concern, NT = Near Threatened, VU = Vulnerable, EN = Endangered") %>%
   gt::tab_source_note("Sources: https://app.bto.org/birdtrends/species.jsp?year=2020, \nStanbury, A., Eaton, M., Aebischer, N., Balmer, D., Brown, A., Douse, A., Lindley, P., McCulloch, N., Noble, D. and Ilka, W., 2021. Data from: The fifth review of Birds of Conservation Concern in the United Kingdom, Channel Islands and Isle of Man and second IUCN Red List assessment of extinction risk of birds for Great Britain. Available at: <http://datadryad.org/stash/dataset/doi:10.5061/dryad.cc2fqz672> [Accessed 6 Jan. 2022]. S")
 
 bf <- get_image(search = "Dunnock", 64)

@@ -5,30 +5,404 @@ output:
     df_print: paged
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
+```{r setup, include = FALSE}
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*.
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+
+```
+
 
 ```{r}
+remotes::install_github("https://github.com/trinker/entity")
 
-library(tidyverse)
+library(tidyverse); library(patchwork); library(rvest); library(entity); library(ggalt); library(readxl); library(data.table); library(tidytable); library(tidyfast); library(tidyselect)
 
 common_birds <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/E011/data/common_birds.rds")
 birds_data <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/E011/data/birds_data.rds")
 bbs_dens <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/E011/data/bbs_dens.rds")
 bto_data <- readRDS("~/Dropbox/Mac (2)/Desktop/MOD007691-E011_1/E011/data/bto_data.rds")
 
-birds_data %>%
+birds_data <- birds_data %>%
   mutate(coverage = plotpres / plotcov)
 
+
 ```
+## Density part 1
 
 ```{r}
 
-birds_data %>%
-  filter(spcode %in% c("starl")) %>%
+bbs_den_dt <- bbs_dens %>%
+  setDT() 
+
+bbs_den_dt[dens > 3,] %>%
+  pluck("species") %>%
+  unique()
+
+rare <- bbs_den_dt[vals < 50,] %>%
+  pluck("species") %>%
+  unique()
+
+bbs_den_dt %>%
+  ggplot(aes(year, sq)) +
+  geom_point() +
+  geom_smooth()
+%>%
+  dt_pivot_longer(names_to = "metric", values_to = "valuess", cols = vals:dens)
+
+
+```
+
+
+
+## People and Nature Survey Adult
+
+```{r}
+
+here::dr_here()
+pns_data <- fread("/Users/julianflowers/Dropbox/My Mac (Julians-MBP-2)/Downloads/Y2Q2_PANS_Data.csv")
+
+#glimpse(test)
+
+# test %>%
+#   janitor::remove_empty() %>%
+#   pivot_longer(names_to = "weights", values_to = "vals", cols = 3:10) %>%
+#   select(weights, vals, everything()) %>%
+#   pivot_longer(names_to = "demog", values_to = "vals1", cols = 5:9) %>%
+#   pivot_longer(names_to = "M1", values_to = "vals1", cols = contains("M1")) 
+
+
+
+```
+
+
+```{r}
+
+tmp <- tempfile()
+
+xls <- "https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1068263/Y2Q2_PANS_Data.xlsx"
+
+curl::curl_download(xls, tmp)
+
+
+pns_sheets <- excel_sheets(tmp)
+
+pns_metadata <- read_excel(tmp, sheet = 3)
+colnames(pns_metadata) <- c("var", "label", "a", "b", "value", "c", "wave")
+pns_metadata <- pns_metadata %>%
+  slice(-1)
+
+pns_metadata %>%
+  View()
+
+```
+
+
+
+
+```{r}
+
+age_cv <- pns_data %>%
+  select(Wave, Region, Age_Band, Gender, Qualification,  starts_with("CV"))  %>%
+  count(Age_Band, CV_Q2A_6) %>%
+  group_by(Age_Band) %>%
+  summarise(sum = sum(n), 
+            prop = n[3]/ sum)
+
+age_cv_post <- pns_data %>%
+  select(Wave, Region, Age_Band, Gender, Qualification,  starts_with("CV"))  %>%
+  count(Age_Band, CV_Q2B_6) %>%
+  group_by(Age_Band) %>%
+  summarise(sum = sum(n), 
+            prop = n[3]/ sum)
+
+#M5_Q3_d
+
+bird_feed <- pns_data %>%
+  select(Wave, Region, Age_Band, Gender, Qualification,  starts_with("M5"))  %>%
+  count(Wave, M5_Q3_d) %>%
+  group_by(Wave) %>%
+  slice(-1) %>%
+  summarise(sum = sum(n[c(2:8)]), 
+            prop = sum(n[c(4, 8)])/sum) %>%
+  select(-sum) %>%
+  pivot_wider(names_from = "Wave", values_from = "prop", values_fill = 0) %>%
+  pivot_longer(names_to = "wave", values_to = "vals", cols = 1:ncol(.)) %>%
+  mutate(time = paste(word(wave, -2), word(wave, -1)), 
+         date = lubridate::dmy(paste("01", time)))
+    
+bird_feed %>%
+  ggplot(aes(date, vals)) +
+  geom_point() +
+  geom_smooth(method = "gam")
+
+```
+
+~ 47% of respondents who answered M5_Q3_d said they fed birds **often** or **very often** in People and Nature Survey - no obvious COVID effect (monthly trend flat)
+ 
+
+## The British List
+
+```{r}
+
+url <- "https://www.bto.org/understanding-birds/birdfacts/british-list"
+
+british_list <- read_html(url) %>%
+  html_table()
+
+colnames(british_list[[1]]) <- c("common_name", "scientific_name", "breeding_status", "estimated_pop", "two_letter_code", "spcode")
+
+options(scipen = 999)
+
+brit_list <- british_list[[1]] %>%
+  mutate(spcode = tolower(spcode),
+         pop_unit = word(estimated_pop, -1), 
+         pop_scale = word(estimated_pop, -2),
+         pop_scale = ifelse(str_detect(estimated_pop, "million"), str_replace(estimated_pop, " million", ",000,000"), estimated_pop), 
+         pop_quant = parse_number(pop_scale))
+
+brit_list <- brit_list %>%
+  mutate(pop_quant = case_when(common_name == "Wren" ~ pop_quant * 10^6,
+                               common_name == "Blackbird" ~ pop_quant * 10^6, 
+                               common_name == "Blue Tit" ~ pop_quant * 10^6,
+                               common_name == "Great Tit" ~ pop_quant * 10^6,
+                               common_name == "Woodpigeon" ~ pop_quant * 10^6,
+                               common_name == "Greenfinch" ~ pop_quant * 10^6,
+                               common_name == "Goldfinch" ~ pop_quant * 10^6,
+                               common_name == "Chaffinch" ~ pop_quant * 10^6,
+                               common_name == "Song Thrush" ~ pop_quant * 10^6,
+                               common_name == "Dunnock" ~ pop_quant * 10^6,
+                               common_name == "House Sparrow" ~ pop_quant * 10^6,
+                               common_name == "Jackdaw" ~ pop_quant * 10^6,
+                               common_name == "Starling" ~ pop_quant * 10^6,
+                               TRUE ~ pop_quant))
+
+brit_list %>%
+  filter(pop_quant >= 100000, str_detect(breeding_status, "Resident Breed")) %>%
+  ggplot(aes(reorder(common_name, pop_quant), pop_quant)) +
+           geom_point(aes(size = pop_quant)) +
+  coord_flip() +
+  scale_y_log10()
+
+brit_list %>%
+  filter(str_detect(common_name, "Woodp"))
+```
+
+
+
+```{r}
+
+breeding <- brit_list %>%
+  mutate(breeding = str_detect(breeding_status, "[Bb]reed")) %>%
+  filter(breeding == "TRUE") 
+
+
+
+breeding %>%
+  filter(pop_quant > 100000) %>%
+  arrange(-pop_quant)
+
+breeding %>%
+  top_n(20, pop_quant) %>%
+  #filter(common_name == "Wren")
+  ggplot(aes(reorder(common_name, pop_quant), pop_quant)) +
+  geom_col() +
+  coord_flip()
+  
+
+```
+
+
+## Garden birdwatch results 2021-22
+
+```{r}
+
+# library(pdftools)
+# 
+# results <- "https://www.rspb.org.uk/globalassets/images/bgbw/bgbw-2022/table/full-uk-results.pdf"
+# 
+# results <- pdftools::pdf_text(results) %>%
+#   str_split(., "\\n") 
+
+# results[[1]] %>%
+#   .[-c(1:6)] %>%
+#   data.frame() %>%
+#   rename(data = 1) %>%
+#   write_csv("garden_birdwatch.csv")
+
+gb_top_20 <- read_csv("garden_birdwatch.csv") %>%
+  mutate(common_name = str_replace_all(species, "_", " "), 
+         common_name = str_to_title(common_name))
+
+a <- gb_top_20 %>%
+  filter(common_name != "Feral Pigeon") %>%
+  top_n(20, mean_2022) %>%
+  ggplot(aes(reorder(common_name, mean_2022), mean_2022)) +
+  geom_col() +
+  coord_flip()+
+  labs(x = "")
+
+b <- gb_top_20 %>%
+  filter(common_name != "Feral Pigeon") %>%
+  top_n(20, `%_gardens_2022`) %>%
+  ggplot(aes(reorder(common_name, `%_gardens_2022`), `%_gardens_2022`)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "")
+
+c <- gb_top_20 %>%
+  filter(common_name != "Feral Pigeon") %>%
+  top_n(20, `%_gardens_2022`) %>%
+  ggplot(aes(x = mean_2022, xend = mean_2021, group = common_name, y = reorder(common_name, mean_2021))) +
+  geom_dumbbell(
+    colour = "red", 
+    colour_xend = "blue", 
+    size = 1, 
+    dot_guide = FALSE, show.legend = TRUE
+    
+    ) +
+  labs(y = "", 
+       x = "Birds per garden")
+
+
+d <- gb_top_20 %>%
+  filter(common_name != "Feral Pigeon") %>%
+  top_n(20, `%_gardens_2022`) %>%
+  ggplot(aes(x = `%_gardens_2021`, xend = `%_gardens_2022`, group = common_name, y = reorder(common_name,`%_gardens_2022`))) +
+  geom_dumbbell(
+    colour = "blue", 
+    colour_xend = "red", 
+    size = 1, 
+    dot_guide = FALSE, show.legend = TRUE
+    
+    ) +
+  labs(y = "", 
+       x = "% gardens")
+
+
+(c+ d)
+
+
+df <- gb_top_20 %>%
+  filter(common_name != "Feral Pigeon") %>%
+  top_n(20, `%_gardens_2022`) %>%
+  select(common_name, contains("%_gard")) 
+
+df2 <- df %>%
+  pivot_longer(names_to = "metric", values_to = "vals", cols = 2:3) 
+
+
+df <- df %>%
+  rename(gardens22 = 2, gardens21 = 3) %>%
+  mutate(common_name = fct_reorder(common_name, gardens21)) 
+
+
+ggplot(df, aes(common_name)) +
+  geom_point(data = df2, aes(y = vals, x = common_name, colour = metric), size = 3) +
+  geom_segment(data = df, aes(y = gardens21, yend = gardens22, x = common_name, xend = common_name), arrow = arrow(angle = 5, type = "closed"), size= .3) +
+  labs(x = "% gardens", 
+       y = "") +
+  coord_flip()
+
+```
+## JNCC Biodiversity Indicator Indicator C5 – Birds of the wider countryside and at sea 2021
+
+```{r indicator c5}
+library(readxl); library(tidyfast)
+tmp <- tempfile()
+curl::curl_download("https://data.jncc.gov.uk/data/7162735c-9fa7-4962-aee7-709d242173f1/ukbi2021-ds-c5.xlsx", tmp)
+
+excel_sheets(tmp)
+
+df <- read_excel(tmp, sheet = "Data", range = "A6:AA55", col_names = F)
+
+titles <- read_excel(tmp, sheet = "Data", range = "A5:AA5", col_names = F)
+colnames(df) <- titles[1,]
+
+df <- df %>%
+    janitor::clean_names()
+
+dt <- data.table::setDT(df)
+
+dim(dt)
+
+dt %>%
+  dt_pivot_longer(names_to = "metric", values_to = "vals", cols = 2:27)
+
+library(tidytable)
+dt %>%
+  rename.(year = year, farmland = smoothed_trend, 
+         woodland = smoothed_trend_2) %>%
+  ggplot() +
+  geom_point(aes(year, farmland), colour = "red") +
+  geom_linerange(aes(year, ymin = smoothed_trend_lower_ci, ymax = smoothed_trend_upper_ci)) +
+  #geom_smooth(aes(year, farmland), colour = "red", method = "gam") +
+  geom_point(aes(year, woodland)) +
+  #geom_smooth(aes(year, woodland), colour = "blue", method = "gam") +
+  geom_linerange(aes(year, ymin = smoothed_trend_lower_ci_2, ymax = smoothed_trend_upper_ci_2)) 
+  
+
+
+```
+
+## Density
+
+```{r}
+
+a <- bbs_dens %>%
+  filter(str_detect(species, "Greenfinch"), year != 2001) %>%
+  ggplot(aes(year, dens, colour = species)) +
+  geom_point() +
+  geom_smooth()
+
+bbs_dens_1 <- bbs_dens %>%
+  group_by(species) %>%
+  #filter(str_detect(species, "Greenfinch"), year != 2001) %>%
+  mutate(max1 = max(dens, na.rm = TRUE), 
+            min1 = min(dens, na.rm = TRUE), 
+            ratio = 1-min1 / max1) %>%
+  setDT()
+
+
+bbs_dens_1 <- bbs_dens_1 %>%
+  tidytable::select.(species, year, dens) %>%
+  setDT()
+
+bbs_dens_1
+  
+pivot_wider(bbs_dens_1, names_from = "year", values_from = "dens", values_fill = 0) %>%
+  mutate(across(where(is.numeric), round, 3)) %>%
+  reactable::reactable(filterable  = TRUE, sortable = TRUE, searchable = TRUE)
+  
+  
+
+
+%>%
+  ggplot(aes(`Blue Tit`, `House Sparrow`)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
+```{r}
+
+b <- birds_data %>%
+  filter(spcode %in% c("grefi")) %>%
   select(date2, b, spcode) %>%
-  distinct()
+  distinct() %>%
+  ggplot(aes(date2, b)) +
+  # geom_line() +
+  geom_smooth()
+
+birds_data %>%
+  filter(spcode %in% c("grefi")) %>%
+  select(date2, b, spcode) %>%
+  distinct() %>%
+  summarise(reduction = 1 - min(b) / max(b))
+a + b
+```
+
+
+```{r}
 
 birds_data_wide <- birds_data %>%
   ungroup() %>%
